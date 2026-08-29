@@ -185,11 +185,12 @@
   // ============================================
   // EDITAR ACÁ: nombre y dosis de cada medicamento
   // ============================================
+  var isSunday = new Date().getDay() === 0;
   var MEDS = [
-    { id: "med1", name: "Medicamento 1", dose: "1 comprimido - mañana" },
-    { id: "med2", name: "Medicamento 2", dose: "1 comprimido - tarde" },
-    { id: "med3", name: "Medicamento 3", dose: "1 comprimido - noche" },
-    { id: "med4", name: "Medicamento 4", dose: "según indicación" }
+    { id: "med1", name: "Levotiroxina", dose: isSunday ? "(T4) 100 mcg" : "(T4)50 mcg" },
+    { id: "med2", name: "Lamotrigina", dose: "LAMIRAX 100 mg" },
+    { id: "med3", name: "Metilfenidato", dose: "CONCENTRA 36 mg" },
+    { id: "med4", name: "Carbonato de Litio", dose: "CEGLUTION-XR 900 mg" }
   ];
   // ============================================
 

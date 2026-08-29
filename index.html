@@ -3,18 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Interruptor</title>
+<title>Medicación</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
     background: #ffffff;
     color: #111111;
     font-family: Georgia, "Times New Roman", serif;
     -webkit-user-select: none;
     user-select: none;
+    overflow: hidden;
+  }
+
+  /* Rota la página 90° para verse horizontal en la pantalla vertical del Kindle */
+  body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vh;
+    height: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100vh);
   }
 
   .frame {
@@ -36,75 +46,105 @@
   }
 
   .room-label {
-    font-size: 42px;
+    font-size: 38px;
     font-weight: bold;
-    margin: 0 0 56px 0;
+    margin: 0 0 8px 0;
     border-bottom: 4px solid #111111;
     display: inline-block;
     padding-bottom: 12px;
   }
 
-  /* Placa de interruptor: el elemento distintivo de la página */
-  .plate {
+  .date-label {
+    font-family: "Courier New", monospace;
+    font-size: 15px;
+    color: #555555;
+    margin: 0 0 40px 0;
+  }
+
+  .list {
     box-sizing: border-box;
-    width: 340px;
+    width: 100%;
+    max-width: 720px;
     margin: 0 auto;
-    border: 5px solid #111111;
-    padding: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .item {
+    box-sizing: border-box;
+    flex: 0 0 calc(50% - 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 4px solid #111111;
+    padding: 24px 14px;
     background: #f6f6f4;
     cursor: pointer;
   }
 
-  .plate-inner {
-    border: 3px solid #111111;
-    padding: 40px 14px;
+  .item.checked {
+    background: #111111;
   }
 
-  .switch-track {
+  .box {
     box-sizing: border-box;
-    width: 120px;
-    height: 226px;
-    margin: 0 auto 32px auto;
-    border: 5px solid #111111;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 46px;
+    border: 4px solid #111111;
+    background: #ffffff;
+    margin-bottom: 14px;
     position: relative;
+  }
+
+  .item.checked .box {
     background: #ffffff;
   }
 
-  .switch-knob {
-    box-sizing: border-box;
+  .box::after {
+    content: "";
+    display: none;
     position: absolute;
-    left: -5px;
-    width: 120px;
-    height: 113px;
-    border: 5px solid #111111;
-    background: #111111;
-    transition: top 0.15s ease-out;
+    left: 8px;
+    top: 2px;
+    width: 14px;
+    height: 26px;
+    border-right: 6px solid #111111;
+    border-bottom: 6px solid #111111;
+    transform: rotate(45deg);
   }
 
-  /* Estado ON: perilla arriba, rellena de negro (luz = presente) */
-  .state-on .switch-knob {
-    top: -5px;
-    background: #111111;
+  .item.checked .box::after {
+    display: block;
   }
 
-  /* Estado OFF: perilla abajo, hueca */
-  .state-off .switch-knob {
-    top: 108px;
-    background: #ffffff;
+  .item-text {
+    text-align: center;
   }
 
-  .status-word {
-    font-size: 34px;
+  .med-name {
+    font-size: 21px;
     font-weight: bold;
-    letter-spacing: 1px;
-    margin: 0 0 6px 0;
+    margin: 0 0 4px 0;
   }
 
-  .status-sub {
+  .item.checked .med-name {
+    color: #ffffff;
+  }
+
+  .med-dose {
     font-family: "Courier New", monospace;
-    font-size: 16px;
+    font-size: 14px;
     color: #555555;
     margin: 0;
+  }
+
+  .item.checked .med-dose {
+    color: #cccccc;
   }
 
   .footer-note {
@@ -114,127 +154,113 @@
     color: #777777;
   }
 
-  .error-box {
-    display: none;
-    margin-top: 20px;
-    border: 2px dashed #111111;
-    padding: 12px;
+  .reset-btn {
+    margin-top: 30px;
+    display: inline-block;
+    border: 3px solid #111111;
+    padding: 10px 20px;
     font-family: "Courier New", monospace;
     font-size: 13px;
+    cursor: pointer;
+    background: #ffffff;
   }
 </style>
 </head>
 <body>
 
   <div class="frame">
-    <p class="eyebrow">Kindle &mdash; Panel remoto</p>
-    <h1 class="room-label">LUZ DEL PATIO</h1>
+    <p class="eyebrow">Registro diario</p>
+    <h1 class="room-label">MEDICACIÓN</h1>
+    <p class="date-label" id="dateLabel"></p>
 
-    <div class="plate" id="plate" onclick="toggleLight()">
-      <div class="plate-inner">
-        <div class="switch-track state-off" id="switchTrack">
-          <div class="switch-knob" id="switchKnob"></div>
-        </div>
-        <p class="status-word" id="statusWord">CONSULTANDO&hellip;</p>
-        <p class="status-sub" id="statusSub">esperando estado</p>
-      </div>
+    <div class="list" id="list">
+      <!-- Los 4 medicamentos se generan desde el array MEDS más abajo -->
     </div>
 
-    <div class="error-box" id="errorBox"></div>
-
-    <p class="footer-note">device: switch_1 &middot; via Tuya Cloud</p>
+    <div class="reset-btn" onclick="resetToday()">reiniciar día</div>
+    <p class="footer-note">se reinicia automáticamente cada día</p>
   </div>
 
 <script>
-  // Ajustá esta URL a la de tu deploy en Vercel, por ejemplo:
-  // var API_URL = "https://tu-proyecto.vercel.app/api/toggle";
-  var API_URL = "/api/toggle";
+  // ============================================
+  // EDITAR ACÁ: nombre y dosis de cada medicamento
+  // ============================================
+  var MEDS = [
+    { id: "med1", name: "Medicamento 1", dose: "1 comprimido - mañana" },
+    { id: "med2", name: "Medicamento 2", dose: "1 comprimido - tarde" },
+    { id: "med3", name: "Medicamento 3", dose: "1 comprimido - noche" },
+    { id: "med4", name: "Medicamento 4", dose: "según indicación" }
+  ];
+  // ============================================
 
-  var isOn = null;
-  var busy = false;
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
 
-  function setUI(on) {
-    isOn = on;
-    var track = document.getElementById("switchTrack");
-    var word = document.getElementById("statusWord");
-    var sub = document.getElementById("statusSub");
-
-    if (on) {
-      track.className = "switch-track state-on";
-      word.innerHTML = "ENCENDIDA";
-      sub.innerHTML = "toque para apagar";
-    } else {
-      track.className = "switch-track state-off";
-      word.innerHTML = "APAGADA";
-      sub.innerHTML = "toque para encender";
+  function loadState() {
+    try {
+      var raw = localStorage.getItem("med_" + todayKey());
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
     }
   }
 
-  function showError(msg) {
-    var box = document.getElementById("errorBox");
-    box.style.display = "block";
-    box.innerHTML = "ERROR: " + msg;
+  function saveState(state) {
+    try {
+      localStorage.setItem("med_" + todayKey(), JSON.stringify(state));
+    } catch (e) {}
   }
 
-  function hideError() {
-    document.getElementById("errorBox").style.display = "none";
-  }
+  var state = loadState();
 
-  function request(action, cb) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", API_URL, true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4) {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            var data = JSON.parse(xhr.responseText);
-            cb(null, data);
-          } catch (e) {
-            cb("respuesta inválida del servidor");
-          }
-        } else {
-          cb("servidor respondió " + xhr.status);
-        }
-      }
-    };
-    xhr.onerror = function () {
-      cb("no se pudo conectar");
-    };
-    xhr.send(JSON.stringify({ action: action }));
-  }
+  function render() {
+    var list = document.getElementById("list");
+    list.innerHTML = "";
+    MEDS.forEach(function (med) {
+      var checked = !!state[med.id];
+      var item = document.createElement("div");
+      item.className = "item" + (checked ? " checked" : "");
+      item.onclick = function () { toggle(med.id); };
 
-  function refreshStatus() {
-    request("status", function (err, data) {
-      if (err) {
-        showError(err);
-        document.getElementById("statusWord").innerHTML = "SIN CONEXIÓN";
-        document.getElementById("statusSub").innerHTML = "reintentar";
-        return;
-      }
-      hideError();
-      setUI(!!data.on);
+      var box = document.createElement("div");
+      box.className = "box";
+
+      var text = document.createElement("div");
+      text.className = "item-text";
+      text.innerHTML =
+        '<p class="med-name">' + med.name + '</p>' +
+        '<p class="med-dose">' + med.dose + '</p>';
+
+      item.appendChild(box);
+      item.appendChild(text);
+      list.appendChild(item);
     });
   }
 
-  function toggleLight() {
-    if (busy) return;
-    busy = true;
-    document.getElementById("statusWord").innerHTML = "ENVIANDO&hellip;";
-
-    request("toggle", function (err, data) {
-      busy = false;
-      if (err) {
-        showError(err);
-        refreshStatus();
-        return;
-      }
-      hideError();
-      setUI(!!data.on);
-    });
+  function toggle(id) {
+    state[id] = !state[id];
+    saveState(state);
+    render();
   }
 
-  refreshStatus();
+  function resetToday() {
+    state = {};
+    saveState(state);
+    render();
+  }
+
+  function setDateLabel() {
+    var d = new Date();
+    var dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+    var meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    document.getElementById("dateLabel").innerHTML =
+      dias[d.getDay()] + " " + d.getDate() + " de " + meses[d.getMonth()];
+  }
+
+  setDateLabel();
+  render();
 </script>
 
 </body>
